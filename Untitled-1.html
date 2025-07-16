@@ -1,0 +1,164 @@
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Calidad de Internet</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .legend {
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            line-height: 1.5;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+        h1 {
+            position: absolute;
+            top: 10px;
+            left: 50px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .info-panel {
+            position: absolute;
+            top: 80px;
+            left: 50px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mapa de Calidad de Internet</h1>
+    <div class="info-panel">
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Inicializar el mapa centrado en una ubicación genérica (ajustar según necesidad)
+        const map = L.map('map').setView([4.6375, -74.0836], 17);
+
+        // Añadir capa base de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Leyenda
+        const legend = L.control({position: 'bottomright'});
+        legend.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = `
+                <i style="background: #2ecc40"></i> Buena calidad <br>
+                <i style="background: #ffdc00"></i> Calidad media <br>
+                <i style="background: #ff4136"></i> Mala calidad 
+            `;
+            return div;
+        };
+        legend.addTo(map);
+        const tabLocations = [
+            {code: "Entrada de la 26", lat: 4.6325, lng: -74.0839, tab: "Acceso principal", calidad: 1},
+            
+            {code: "Entrada de la 30", lat: 4.6349, lng: -74.0803, tab: "Acceso principal", calidad: 1},
+            
+            {code: "Entrada de la 53", lat: 4.6436, lng: -74.0832, tab: "Acceso principal", calidad: 1},
+            // TABs (simulando ubicaciones cercanas)
+            {code: "NEA", lat: 4.6372, lng: -74.0815, tab: "0.8", calidad: 2},
+            {code: "Laboratorio de quimica", lat: 4.6395, lng: -74.0808, tab: "0.9", calidad: 1},
+            {code: "Agronomia", lat: 4.6359, lng: -74.0870, tab: "0.10", calidad: 0},
+            {code: "Hemeroteca", lat: 4.6365, lng: -74.09104, tab: "0.11", calidad: 2},
+            {code: "Concha Acustica", lat: 4.6388, lng: -74.0872, tab: "0.12", calidad: 2},
+            {code: "Museo de historia", lat: 4.6420, lng: -74.0818, tab: "0.13", calidad: 2},
+            {code: "CyT", lat: 4.6380, lng: -74.0847, tab: "0.14", calidad: 2},
+            {code: "El viejo", lat: 4.6372, lng: -74.0828, tab: "0.15", calidad: 2},
+            {code: "Quimica y Farmacia", lat: 4.6374, lng: -74.0839, tab: "0.16", calidad: 0},
+            {code: "Yu Takeuchi", lat: 4.6377, lng: -74.0825, tab: "0.17", calidad: 1},
+            // ... agregar más TABs según sea necesario
+            {code: "Plaza che", lat: 4.6355, lng: -74.0827, tab: "0.30", calidad: 1},
+            {code: "Canchas", lat: 4.6401, lng: -74.0844 , tab: "0.31", calidad: 0},
+            {code: "Medicina", lat: 4.6364, lng: -74.0842, tab: "0.32", calidad: 0},
+            // ... continuar con el patrón
+            {code: "Enfermeria", lat: 4.6354, lng: -74.0848, tab: "0.44", calidad: 0}
+        ];
+
+        // Añadir marcadores al mapa
+        tabLocations.forEach(loc => {
+            let color, radius;
+            
+            // Determinar color basado en calidad
+            if (loc.calidad === 0) {
+                color = '#ff4136'; // Rojo (mala calidad)
+            } else if (loc.calidad === 1) {
+                color = '#ffdc00'; // Amarillo (calidad media)
+            } else {
+                color = '#2ecc40'; // Verde (buena calidad)
+            }
+            
+            // Determinar tamaño basado en si es TAB o acceso principal
+            if (loc.tab === "Acceso principal") {
+                radius = 25;
+            } else {
+                radius = 20;
+            }
+
+            const marker = L.circleMarker([loc.lat, loc.lng], {
+                radius: radius,
+                fillColor: color,
+                color: '#000',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map);
+
+            // Leyendas
+            let calidadTexto;
+            if (loc.calidad === 0) {
+                calidadTexto = "Mala calidad";
+            } else if (loc.calidad === 1) {
+                calidadTexto = "Calidad media";
+            } else {
+                calidadTexto = "Buena calidad";
+            }
+            
+            marker.bindTooltip(`<strong>${loc.code}</strong><br>${calidadTexto}`);
+            
+            // Mostrar más información al hacer clic
+            marker.on('click', function() {
+                alert(`Ubicación: ${loc.code}\nCalidad: ${calidadTexto}`);
+            });
+        });
+
+        /**Opcional: Agregar polígonos para áreas de cobertura
+        const buenaArea = L.polygon([
+            [4.6372, -74.0828],
+            [4.6377, -74.0825],
+            [4.6372, -74.0815],
+            [4.6355, -74.0827]
+        ], {color: '#2ecc40', fillOpacity: 0.1}).addTo(map);
+        
+        buenaArea.bindTooltip("Área de buena calidad de internet");
+        **/
+    </script>
+</body>
+</html>
